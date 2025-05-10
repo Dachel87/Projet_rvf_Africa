@@ -1,0 +1,277 @@
+---
+title: "analyse_rvf"
+author: "Dachel"
+date: "2025-05-09"
+output: html_document
+---
+
+Charger les librairies
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+Charger les bibliothèques nécessaires
+
+```{r}
+library(dplyr)
+library(readr)
+library(stringr)
+```
+
+Definir le repertoire de travail
+
+```{r}
+setwd("~/Bureau/training_ghana/Projet_rvf_Africa/results") # Remplace par ton chemin réel
+knitr::opts_knit$set(root.dir = "~/Bureau/training_ghana/Projet_rvf_Africa/results")
+fichier <- "/home/lnsp/Bureau/training_ghana/Projet_rvf_Africa/results/metadata_clean.tsv"
+donnees <- read_tsv(fichier, show_col_types = FALSE)
+
+print(colnames(donnees))
+
+```
+
+Verification du type de colonne
+
+```{r}
+str(donnees)
+
+donnees$CollectionDate <- as.Date(donnees$CollectionDate, format = "%Y-%m-%d")
+```
+
+Étape 1 : Retirer les entrées sans date de collecte ou pays
+
+```{r}
+donnees_filtrees <- fichier %>%
+  filter(!is.na(CollectionDate), !is.na(IsolationCountry))
+
+# Sauvegarder les données filtrées
+write_tsv(donnees_filtrees, "donnees_filtrees.tsv")
+```
+
+Étape 2 : Grouper et résumer le nombre de séquences par pays, année, segment
+
+```{r}
+resume_pays_annee_segment <- donnees_filtrees %>%
+  group_by(IsolationCountry, CollectionYear, Segment) %>%
+  summarise(Nb_sequences = n(), .groups = "drop")
+
+write_tsv(resume_pays_annee_segment, "resume_pays_annee_segment.tsv")
+print(resume_pays_annee_segment)
+```
+
+Étape 3 : Créer une colonne dérivée (par exemple : région depuis le pays)
+
+```{r}
+donnees_mutation <- donnees_filtrees %>%
+  mutate(Region = case_when(
+    IsolationCountry %in% c("Kenya", "Sudan", "Tanzania", "Uganda") ~ "Afrique de l'Est",
+    IsolationCountry %in% c("Senegal", "Mauritania") ~ "Afrique de l'Ouest",
+    TRUE ~ "Autre"
+  ))
+```
+
+Etape 4: compter le nombre de sequences par hote commun
+
+```{r}
+compte_hotes <- donnees_mutation %>%
+  group_by(`Host Common Name`) %>%
+  summarise(Nb_sequences = n(), .groups = "drop") %>%
+  arrange(desc(Nb_sequences))
+
+write_tsv(compte_hotes, "compte_hotes.tsv")
+print(compte_hotes)
+```
+
+Étape 5 : Filtrer par pays, années et segments spécifiques (exemple : Kenya, 2007, segment L)
+
+```{r}
+
+filtres_specifiques <- donnees_mutation %>%
+  filter(IsolationCountry == "Kenya", CollectionYear == 2007, Segment == "L")
+
+print(filtres_specifiques)
+```
+
+Étape 6 : Renommer la colonne CollectionYear en year
+
+```{r}
+donnees_renommee <- donnees_mutation %>%
+  rename(year = CollectionYear)
+```
+
+Étape 7 : Grouper et résumer par pays, année et segment
+
+```{r}
+resume_final <- donnees_renommee %>%
+  group_by(IsolationCountry, year, Segment) %>%
+  summarise(Nb_sequences = n(), .groups = "drop")
+
+write_tsv(resume_final, "resume_final.tsv")
+print(resume_final)
+```
+
+Étape 8 : Identifier les pays avec le plus grand nombre de séquences complètes (indépendamment du segment)
+
+```{r}
+pays_plus_sequences <- donnees_filtrees %>%
+  filter(GenomeStatus == "Complete") %>%
+  group_by(IsolationCountry) %>%
+  summarise(Nb_sequences_completes = n(), .groups = "drop") %>%
+  arrange(desc(Nb_sequences_completes))
+
+write_tsv(pays_plus_sequences, "pays_plus_sequences.tsv")
+print(pays_plus_sequences)
+```
+
+Étape 9 : Compter les hôtes les plus fréquents (top 10)
+
+```{r}
+top_hotes <- donnees_filtrees %>%
+  group_by(`Host Common Name`) %>%
+  summarise(Nb_sequences = n(), .groups = "drop") %>%
+  arrange(desc(Nb_sequences)) %>%
+  slice_head(n = 10)
+
+write_tsv(top_hotes, "top_hotes.tsv")
+print(top_hotes)
+
+
+cat("✅ Analyse terminée. Tous les fichiers résumés ont été sauvegardés dans le répertoire : ", getwd(), "\n")
+```
+
+Telechargement de librairie
+
+```{r}
+library(dplyr)
+library(readr)
+# repertoire de travail
+
+setwd("/home/lnsp/Bureau/training_ghana/Travaux_pratique/rvf_africa_projet/resultats")
+
+donnees <- read_tsv(fichier, show_col_types = FALSE)
+
+print(colnames(donnees))
+```
+
+1️⃣ Nombre d'isolats par pays
+
+```{r}
+isolats_par_pays <- donnees %>%
+  group_by(IsolationCountry) %>%
+  summarise(Nombre_isolats = n(), .groups = "drop") %>%
+  arrange(desc(Nombre_isolats))
+print("=== Nombre d'isolats par pays ===")
+print(isolats_par_pays)
+
+```
+
+Sauvegarder le résumé
+
+```{r}
+write_tsv(isolats_par_pays, "nombre_isolats_par_pays.tsv")
+```
+
+2️⃣ Nombre d'isolats par an
+
+```{r}
+isolats_par_an <- donnees %>%
+  group_by(CollectionYear) %>%
+  summarise(Nombre_isolats = n(), .groups = "drop") %>%
+  arrange(CollectionYear)
+print("=== Nombre d'isolats par an ===")
+print(isolats_par_an)
+
+write_tsv(isolats_par_an, "nombre_isolats_par_an.tsv")
+```
+
+3️⃣ Répartition des segments (S, M, L) par pays
+
+```{r}
+repartition_segments <- donnees %>%
+  group_by(IsolationCountry, Segment) %>%
+  summarise(Nombre = n(), .groups = "drop") %>%
+  arrange(IsolationCountry, Segment)
+
+print("=== Répartition des segments par pays ===")
+print(repartition_segments)
+
+# Sauvegarder le résumé
+write_tsv(repartition_segments, "repartition_segments_par_pays.tsv")
+
+cat("✅ Analyse descriptive terminée. Résultats sauvegardés dans le dossier : ",
+    getwd(), "\n")
+```
+
+Assurez-vous que les colonnes sont bien de type approprié
+
+```{r}
+donnees <- donnees %>%
+  mutate(CollectionYear = as.integer(CollectionYear),
+         CollectionDate = as.Date(CollectionDate, format = "%Y-%m-%d"))
+```
+
+Visualisation des données
+
+1️⃣ Boxplot : distribution des dates de collecte par pays
+
+```{r}
+library(ggplot2)
+
+ggplot(donnees, aes(x = IsolationCountry, y = CollectionYear)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Distribution des années de collecte par pays",
+       x = "Pays",
+       y = "Année de collecte") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("boxplot_annee_par_pays.png", width = 8, height = 5)
+```
+
+2️⃣ Boxplot : distribution des années de collecte par segment
+
+```{r}
+ggplot(donnees, aes(x = Segment, y = CollectionYear)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(title = "Distribution des années de collecte par segment",
+       x = "Segment viral",
+       y = "Année de collecte") +
+  theme_minimal()
+
+ggsave("boxplot_annee_par_segment.png", width = 6, height = 5)
+```
+
+3️⃣ Résumé : nombre d’isolats par pays et année
+
+```{r}
+resume_pays_annee <- donnees %>%
+  group_by(IsolationCountry, CollectionYear) %>%
+  summarise(Nb_isolats = n(), .groups = "drop") %>%
+  arrange(desc(Nb_isolats))
+
+print("Résumé des isolats par pays et année :")
+print(resume_pays_annee)
+
+write_tsv(resume_pays_annee, "resume_isolats_par_pays_annee.tsv")
+```
+
+4️⃣ Barplot : distribution des souches par pays
+
+```{r}
+ggplot(donnees, aes(x = IsolationCountry, fill = Strain)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Distribution des souches par pays",
+       x = "Pays",
+       y = "Nombre d’isolats",
+       fill = "Souche (Strain)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("barplot_souches_par_pays.png", width = 8, height = 5)
+
+cat("✅ Graphiques générés et sauvegardés dans : ", getwd(), "\n")
+```
+
+```         
+```

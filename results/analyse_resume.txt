@@ -1,0 +1,13 @@
+Résumé de l'analyse des métadonnées
+===================================
+Date : ven. 09 mai 2025 22:06:46 WAT
+
+Nombre de numéros d'accession GenBank uniques : 1435
+Nombre de séquences complètes : 833
+Nombre de séquences partielles : 602
+Nombre de segments S : 454
+Nombre de segments L : 368
+Nombre de segments M : 476
+Nombre de segments S complets : 319
+Nombre de segments L complets : 257
+Nombre de segments M complets : 254
