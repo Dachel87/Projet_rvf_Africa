@@ -1,0 +1,3 @@
+Projet de groupe final : Conservation et analyse des métadonnées génomiques du virus de la fièvre de la vallée du Rift (VFVR) en Afrique
+Il s’agit d’un flux de travail bioinformatique réel pour l'extraire, conserver et analyser les métadonnées génomiques à l'aide de fichiers GenBank du virus de la fièvre de la vallée du Rift (VFVR) isolé dans des pays africains. Nous avons récupéré les données sur GenBank de VFVR à l'aide des numéros d'accès fournis, ensuite nous avons extrait ces métadonnées structurées, nettoiées et analysées avec Bash, Python et R, et produira un rapport reproductible via Quarto, RMarkdown/R Notebook ou Jupyter.
+Pour repondre aux questions, voici la procedure que nous avons utilisés pour avoir des résultats satisfaisants. 
